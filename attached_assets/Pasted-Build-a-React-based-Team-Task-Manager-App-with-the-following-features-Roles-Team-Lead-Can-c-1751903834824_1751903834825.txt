@@ -1,0 +1,185 @@
+Build a React-based Team Task Manager App with the following features:
+
+Roles:
+
+Team Lead: Can create domains and tasks.
+
+Team Members: Can choose their preferred domains and complete tasks.
+
+Core Functionality:
+
+Domain Management:
+
+The team lead can define custom domains like Design, Development, Research.
+
+Team members can choose their preferred domain to work in.
+
+Task Creation:
+
+The team lead can create a task by entering:
+
+Task title
+
+Description
+
+Domain
+
+Deadline (date and time)
+
+The app automatically assigns the task to one of the team members who selected that domain.
+
+Task Distribution Logic:
+
+Tasks are distributed evenly among members of the selected domain.
+
+Assignments should rotate to balance workload.
+
+Deadline Tracking and Auto Reassignment:
+
+The app checks for missed deadlines every 1 minute using a timer.
+
+If a task is still marked as "Pending" after the deadline:
+
+Send a notification or reminder to the assigned member.
+
+If the task remains incomplete, automatically reassign it to another available member in the same domain.
+
+Task View:
+
+All tasks should be displayed showing:
+
+Title
+
+Description
+
+Domain
+
+Assigned team member
+
+Deadline
+
+Status (Pending or Completed)
+
+Tech Stack and UI:
+
+React (JavaScript)
+
+UI built with Tailwind CSS or similar styling system
+
+Use useState and useEffect for state and time-based checks
+
+Use mock data for team members with preferred domains
+
+setInterval function for checking overdue tasks every 60 seconds
+
+Optional Add-ons (if needed):
+
+Add login or authentication
+
+Allow team members to edit or update their domain preferences
+
+Use Firebase or MongoDB to store tasks and member data
+
+Track task progress (e.g., 0–100%)
+
+Add real-time notifications or alerts
+Add a backend to the React-based Team Task Manager App with the following features and structure:
+
+Backend Stack:
+
+Node.js with Express.js for API routes
+
+MongoDB (or Firebase Firestore) as the database
+
+Use JWT-based authentication (optional)
+
+Hostable on platforms like Render, Vercel, or Firebase
+
+API Requirements:
+
+Authentication APIs (optional but recommended):
+
+POST /register — Register a new user (name, email, password, role)
+
+POST /login — Log in and receive a JWT token
+
+Use middleware to protect routes for authenticated users
+
+Differentiate between team lead and team members
+
+Domain Management APIs:
+
+POST /domains — Team lead creates a domain (e.g., Design, Dev)
+
+GET /domains — Fetch list of all available domains
+
+Team Member Domain Preference:
+
+PUT /users/:id/domain — Set or update a member’s preferred domain
+
+GET /users?domain=Design — Get all users with a specific domain
+
+Task Management APIs:
+
+POST /tasks — Team lead creates a task (title, description, domain, deadline)
+
+GET /tasks — Get all tasks
+
+GET /tasks?userId=xyz — Get tasks assigned to a specific user
+
+PUT /tasks/:id — Update task status or details
+
+DELETE /tasks/:id — Delete a task if needed
+
+Task Assignment Logic (in backend):
+
+When a task is created, automatically assign it to a team member under the specified domain
+
+Use a round-robin or balanced assignment logic
+
+Store assignedTo user ID in the task document
+
+Deadline Handling (cron job or background scheduler):
+
+Use node-cron or a serverless function to:
+
+Check tasks every few minutes
+
+If a task is past its deadline and still pending:
+
+Send a notification (email or in-app)
+
+Reassign to another available member in the same domain
+
+Notification System (optional):
+
+Trigger notifications via email (using Nodemailer) or push/in-app alerts
+
+Notify when:
+
+A task is assigned
+
+A task is nearing or past deadline
+
+A task is reassigned
+
+Data Models (MongoDB example):
+User:
+
+id, name, email, password, role (lead or member), preferredDomain
+
+Task:
+
+id, title, description, domain, assignedTo (user ID), deadline, status (Pending/Completed)
+
+Domain:
+
+id, name (e.g., Design), createdBy (lead ID)
+
+Security:
+
+Use JWT for session handling
+
+Secure all task/domain routes for leads only
+
+This backend should be connected to the React frontend using Axios or Fetch API calls. Ensure CORS is enabled. Use .env for secrets and DB connection strings.

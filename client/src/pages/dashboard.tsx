@@ -30,6 +30,11 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: !!user,
+  });
+
   // Handle authentication redirect using useEffect
   useEffect(() => {
     if (!authLoading && !user) {

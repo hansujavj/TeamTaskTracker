@@ -10,7 +10,8 @@ import {
   type InsertTask 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, lt } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
   // User methods
@@ -19,6 +20,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserDomain(id: number, domain: string): Promise<User | undefined>;
   getUsersByDomain(domain: string): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
   
   // Domain methods
   getDomains(): Promise<Domain[]>;
@@ -47,11 +49,13 @@ export class DatabaseStorage implements IStorage {
       const existingUsers = await db.select().from(users).limit(1);
       if (existingUsers.length > 0) return;
 
+      const hashedPassword = await bcrypt.hash("password123", 10);
+
       // Create default team lead
       const [teamLead] = await db.insert(users).values({
         name: "John Doe",
         email: "lead@example.com",
-        password: "$2b$10$YourHashedPasswordHere", // Will be properly hashed
+        password: hashedPassword,
         role: "lead",
         preferredDomain: null,
       }).returning();
@@ -80,21 +84,21 @@ export class DatabaseStorage implements IStorage {
         {
           name: "Sarah Wilson",
           email: "sarah@example.com",
-          password: "$2b$10$YourHashedPasswordHere",
+          password: hashedPassword,
           role: "member",
           preferredDomain: "Design",
         },
         {
           name: "Mike Chen",
           email: "mike@example.com", 
-          password: "$2b$10$YourHashedPasswordHere",
+          password: hashedPassword,
           role: "member",
           preferredDomain: "Development",
         },
         {
           name: "Lisa Park",
           email: "lisa@example.com",
-          password: "$2b$10$YourHashedPasswordHere", 
+          password: hashedPassword, 
           role: "member",
           preferredDomain: "Research",
         }
@@ -133,6 +137,10 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersByDomain(domain: string): Promise<User[]> {
     return await db.select().from(users).where(eq(users.preferredDomain, domain));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   async getDomains(): Promise<Domain[]> {
@@ -195,7 +203,12 @@ export class DatabaseStorage implements IStorage {
 
   async getOverdueTasks(): Promise<Task[]> {
     const now = new Date();
-    return await db.select().from(tasks).where(eq(tasks.status, 'pending'));
+    return await db.select().from(tasks).where(
+      and(
+        eq(tasks.status, 'pending'),
+        lt(tasks.deadline, now)
+      )
+    );
   }
 
   async getTask(id: number): Promise<Task | undefined> {

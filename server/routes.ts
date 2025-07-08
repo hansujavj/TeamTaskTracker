@@ -196,8 +196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (domain) {
         users = await storage.getUsersByDomain(domain as string);
       } else {
-        // For simplicity, return empty array if no domain specified
-        users = [];
+        // Team leads can see all users, members see only themselves
+        if (req.user!.role === 'lead') {
+          users = await storage.getAllUsers();
+        } else {
+          users = [req.user!];
+        }
       }
       
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
@@ -236,6 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const taskData = insertTaskSchema.parse({
         ...req.body,
+        deadline: new Date(req.body.deadline),
         createdBy: req.user!.id
       });
 
@@ -249,6 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(task);
     } catch (error) {
+      console.error('Task creation error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : 'Failed to create task' });
     }
   });

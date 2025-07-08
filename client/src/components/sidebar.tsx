@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle2, Home, ListTodo, Users, LogOut, Layers } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { useQuery } from '@tanstack/react-query';
 import type { User } from '@shared/schema';
 
 interface SidebarProps {
@@ -10,6 +11,10 @@ interface SidebarProps {
 
 export default function Sidebar({ user }: SidebarProps) {
   const { logout } = useAuth();
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: !!user,
+  });
 
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
 
@@ -44,6 +49,28 @@ export default function Sidebar({ user }: SidebarProps) {
             Team
           </Button>
         </nav>
+
+        {/* Team Members Section */}
+        {user.role === 'lead' && users.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Team Members</h3>
+            <div className="space-y-2">
+              {users.filter((u: User) => u.role === 'member').map((member: User) => (
+                <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent">
+                  <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium">
+                      {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{member.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{member.preferredDomain || 'No domain'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Card className="p-3 absolute bottom-6 left-6 right-6">
           <div className="flex items-center gap-3">

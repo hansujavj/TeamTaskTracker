@@ -36,11 +36,10 @@ export default function CreateTaskModal({ isOpen, onClose, domains }: CreateTask
       const deadline = new Date(`${taskData.deadline}T${taskData.time}`);
       const response = await apiRequest('POST', '/api/tasks', {
         title: taskData.title,
-        description: taskData.description,
+        description: taskData.description || null,
         domain: taskData.domain,
         priority: taskData.priority,
         deadline: deadline.toISOString(),
-        status: 'pending',
       });
       return response.json();
     },

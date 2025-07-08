@@ -77,27 +77,27 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
         )}
 
-        <div className="absolute bottom-6 left-6 right-6">
-          <Card className="p-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">{initials}</span>
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-semibold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs font-medium truncate">{user.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
               </div>
             </div>
-          </Card>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={logout}
-            className="w-full mt-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-3 h-3 mr-2" />
-            Sign Out
-          </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={logout}
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+              title="Sign Out"
+            >
+              <LogOut className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
       </div>
     </aside>

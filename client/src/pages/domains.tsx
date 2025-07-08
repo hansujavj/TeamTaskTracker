@@ -30,8 +30,6 @@ export default function Domains() {
 
   const createDomainMutation = useMutation({
     mutationFn: async (domainData: { name: string; description: string }) => {
-      console.log('Creating domain:', domainData);
-      console.log('User role:', user?.role);
       const response = await apiRequest('POST', '/api/domains', domainData);
       return response.json();
     },
@@ -45,7 +43,6 @@ export default function Domains() {
       setNewDomain({ name: '', description: '' });
     },
     onError: (error) => {
-      console.error('Domain creation error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create domain',

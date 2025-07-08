@@ -148,18 +148,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDomain(insertDomain: InsertDomain): Promise<Domain> {
-    console.log('Storage: Creating domain with data:', insertDomain);
-    try {
-      const [domain] = await db
-        .insert(domains)
-        .values(insertDomain)
-        .returning();
-      console.log('Storage: Domain created successfully:', domain);
-      return domain;
-    } catch (error) {
-      console.error('Storage: Error creating domain:', error);
-      throw error;
-    }
+    const [domain] = await db
+      .insert(domains)
+      .values(insertDomain)
+      .returning();
+    return domain;
   }
 
   async getDomainByName(name: string): Promise<Domain | undefined> {

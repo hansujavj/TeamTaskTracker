@@ -42,7 +42,6 @@ const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunc
 
 // Team lead only middleware
 const requireTeamLead = (req: AuthRequest, res: Response, next: NextFunction) => {
-  console.log('Checking team lead access for user:', req.user);
   if (req.user?.role !== 'lead') {
     return res.status(403).json({ message: 'Team lead access required' });
   }
@@ -164,20 +163,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/domains", authenticateToken, requireTeamLead, async (req: AuthRequest, res) => {
     try {
-      console.log('Creating domain with user:', req.user);
-      console.log('Request body:', req.body);
-      
       const domainData = insertDomainSchema.parse({
         ...req.body,
         createdBy: req.user!.id
       });
       
-      console.log('Parsed domain data:', domainData);
-      
       const domain = await storage.createDomain(domainData);
       res.json(domain);
     } catch (error) {
-      console.error('Domain creation error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : 'Failed to create domain' });
     }
   });

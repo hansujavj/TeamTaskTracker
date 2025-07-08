@@ -96,8 +96,21 @@ TaskFlow is a React-based team task management application that enables efficien
 - `JWT_SECRET`: Secret key for JWT token signing
 - `NODE_ENV`: Environment mode (development/production)
 
-## Changelog
-- July 07, 2025. Initial setup
+## Recent Changes
+
+### July 08, 2025 - Major Feature Updates
+- ✓ Moved logout button to compact bottom corner layout for better UX
+- ✓ Added functional navbar with working routing to Dashboard, Domains, and Reports
+- ✓ Created comprehensive UserProfile component showing user identity, domain, and assigned tasks
+- ✓ Implemented dynamic notification system based on actual overdue and urgent tasks
+- ✓ Made Quick Actions on dashboard functional - linked to actual Domains and Reports pages
+- ✓ Added full responsive design support for mobile, tablet, and desktop
+- ✓ Fixed team member auto-refresh functionality every 30 seconds
+- ✓ Domain creation now fully functional for team leads
+- ✓ Reports page shows real team performance analytics
+
+### July 07, 2025
+- Initial setup with authentication, task management, and database integration
 
 ## User Preferences
 

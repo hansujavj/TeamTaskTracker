@@ -9,6 +9,8 @@ import {
   type Task, 
   type InsertTask 
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -34,201 +36,172 @@ export interface IStorage {
   getTask(id: number): Promise<Task | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private domains: Map<number, Domain>;
-  private tasks: Map<number, Task>;
-  private currentUserId: number;
-  private currentDomainId: number;
-  private currentTaskId: number;
-
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.users = new Map();
-    this.domains = new Map();
-    this.tasks = new Map();
-    this.currentUserId = 1;
-    this.currentDomainId = 1;
-    this.currentTaskId = 1;
-
-    // Initialize with default data
     this.initializeDefaultData();
   }
 
   private async initializeDefaultData() {
-    // Create default team lead
-    const teamLead = await this.createUser({
-      name: "John Doe",
-      email: "lead@example.com",
-      password: "password123",
-      role: "lead",
-      preferredDomain: null,
-    });
+    try {
+      // Check if data already exists
+      const existingUsers = await db.select().from(users).limit(1);
+      if (existingUsers.length > 0) return;
 
-    // Create default domains
-    const designDomain = await this.createDomain({
-      name: "Design",
-      description: "UI/UX design, prototyping, and visual assets",
-      createdBy: teamLead.id,
-    });
+      // Create default team lead
+      const [teamLead] = await db.insert(users).values({
+        name: "John Doe",
+        email: "lead@example.com",
+        password: "$2b$10$YourHashedPasswordHere", // Will be properly hashed
+        role: "lead",
+        preferredDomain: null,
+      }).returning();
 
-    const devDomain = await this.createDomain({
-      name: "Development",
-      description: "Frontend and backend development tasks",
-      createdBy: teamLead.id,
-    });
+      // Create default domains
+      await db.insert(domains).values([
+        {
+          name: "Design",
+          description: "UI/UX design, prototyping, and visual assets",
+          createdBy: teamLead.id,
+        },
+        {
+          name: "Development", 
+          description: "Frontend and backend development tasks",
+          createdBy: teamLead.id,
+        },
+        {
+          name: "Research",
+          description: "Market research and user studies", 
+          createdBy: teamLead.id,
+        }
+      ]);
 
-    const researchDomain = await this.createDomain({
-      name: "Research",
-      description: "Market research and user studies",
-      createdBy: teamLead.id,
-    });
-
-    // Create default team members
-    await this.createUser({
-      name: "Sarah Wilson",
-      email: "sarah@example.com",
-      password: "password123",
-      role: "member",
-      preferredDomain: "Design",
-    });
-
-    await this.createUser({
-      name: "Mike Chen",
-      email: "mike@example.com",
-      password: "password123",
-      role: "member",
-      preferredDomain: "Development",
-    });
-
-    await this.createUser({
-      name: "Lisa Park",
-      email: "lisa@example.com",
-      password: "password123",
-      role: "member",
-      preferredDomain: "Research",
-    });
+      // Create default team members
+      await db.insert(users).values([
+        {
+          name: "Sarah Wilson",
+          email: "sarah@example.com",
+          password: "$2b$10$YourHashedPasswordHere",
+          role: "member",
+          preferredDomain: "Design",
+        },
+        {
+          name: "Mike Chen",
+          email: "mike@example.com", 
+          password: "$2b$10$YourHashedPasswordHere",
+          role: "member",
+          preferredDomain: "Development",
+        },
+        {
+          name: "Lisa Park",
+          email: "lisa@example.com",
+          password: "$2b$10$YourHashedPasswordHere", 
+          role: "member",
+          preferredDomain: "Research",
+        }
+      ]);
+    } catch (error) {
+      console.log('Default data initialization skipped:', error);
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      ...insertUser, 
-      id,
-      preferredDomain: insertUser.preferredDomain ?? null
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async updateUserDomain(id: number, domain: string): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (user) {
-      const updatedUser = { ...user, preferredDomain: domain };
-      this.users.set(id, updatedUser);
-      return updatedUser;
-    }
-    return undefined;
+    const [user] = await db
+      .update(users)
+      .set({ preferredDomain: domain })
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   async getUsersByDomain(domain: string): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => user.preferredDomain === domain);
+    return await db.select().from(users).where(eq(users.preferredDomain, domain));
   }
 
   async getDomains(): Promise<Domain[]> {
-    return Array.from(this.domains.values());
+    return await db.select().from(domains);
   }
 
   async createDomain(insertDomain: InsertDomain): Promise<Domain> {
-    const id = this.currentDomainId++;
-    const domain: Domain = { 
-      ...insertDomain, 
-      id,
-      description: insertDomain.description ?? null
-    };
-    this.domains.set(id, domain);
+    const [domain] = await db
+      .insert(domains)
+      .values(insertDomain)
+      .returning();
     return domain;
   }
 
   async getDomainByName(name: string): Promise<Domain | undefined> {
-    return Array.from(this.domains.values()).find(domain => domain.name === name);
+    const [domain] = await db.select().from(domains).where(eq(domains.name, name));
+    return domain || undefined;
   }
 
   async getTasks(): Promise<Task[]> {
-    return Array.from(this.tasks.values()).sort((a, b) => 
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
+    return await db.select().from(tasks).orderBy(tasks.createdAt);
   }
 
   async getTasksByUser(userId: number): Promise<Task[]> {
-    return Array.from(this.tasks.values())
-      .filter(task => task.assignedTo === userId)
-      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return await db.select().from(tasks).where(eq(tasks.assignedTo, userId)).orderBy(tasks.createdAt);
   }
 
   async getTasksByDomain(domain: string): Promise<Task[]> {
-    return Array.from(this.tasks.values())
-      .filter(task => task.domain === domain)
-      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return await db.select().from(tasks).where(eq(tasks.domain, domain)).orderBy(tasks.createdAt);
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const id = this.currentTaskId++;
-    const task: Task = { 
-      ...insertTask, 
-      id, 
-      description: insertTask.description ?? null,
-      status: insertTask.status ?? 'pending',
-      assignedTo: insertTask.assignedTo ?? null,
-      priority: insertTask.priority ?? 'medium',
-      createdAt: new Date(),
-      completedAt: null 
-    };
-    this.tasks.set(id, task);
+    const [task] = await db
+      .insert(tasks)
+      .values(insertTask)
+      .returning();
     return task;
   }
 
   async updateTaskStatus(id: number, status: string, completedAt?: Date): Promise<Task | undefined> {
-    const task = this.tasks.get(id);
-    if (task) {
-      const updatedTask = { 
-        ...task, 
+    const [task] = await db
+      .update(tasks)
+      .set({ 
         status, 
         completedAt: status === 'completed' ? (completedAt || new Date()) : null 
-      };
-      this.tasks.set(id, updatedTask);
-      return updatedTask;
-    }
-    return undefined;
+      })
+      .where(eq(tasks.id, id))
+      .returning();
+    return task || undefined;
   }
 
   async updateTaskAssignment(id: number, assignedTo: number): Promise<Task | undefined> {
-    const task = this.tasks.get(id);
-    if (task) {
-      const updatedTask = { ...task, assignedTo };
-      this.tasks.set(id, updatedTask);
-      return updatedTask;
-    }
-    return undefined;
+    const [task] = await db
+      .update(tasks)
+      .set({ assignedTo })
+      .where(eq(tasks.id, id))
+      .returning();
+    return task || undefined;
   }
 
   async getOverdueTasks(): Promise<Task[]> {
     const now = new Date();
-    return Array.from(this.tasks.values()).filter(task => 
-      task.status === 'pending' && new Date(task.deadline) < now
-    );
+    return await db.select().from(tasks).where(eq(tasks.status, 'pending'));
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasks.get(id);
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task || undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

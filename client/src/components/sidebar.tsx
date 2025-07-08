@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle2, Home, ListTodo, Users, LogOut, Layers } from 'lucide-react';
+import { CheckCircle2, Home, ListTodo, Users, LogOut, Layers, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
+import { Link, useLocation } from 'wouter';
 import type { User } from '@shared/schema';
 
 interface SidebarProps {
@@ -11,9 +12,11 @@ interface SidebarProps {
 
 export default function Sidebar({ user }: SidebarProps) {
   const { logout } = useAuth();
+  const [location] = useLocation();
   const { data: users = [] } = useQuery({
     queryKey: ['/api/users'],
     enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -32,22 +35,24 @@ export default function Sidebar({ user }: SidebarProps) {
         </div>
 
         <nav className="space-y-2 mb-8">
-          <Button variant="ghost" className="w-full justify-start bg-accent text-accent-foreground">
-            <Home className="w-5 h-5 mr-3" />
-            Dashboard
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <ListTodo className="w-5 h-5 mr-3" />
-            {user.role === 'lead' ? 'All Tasks' : 'My Tasks'}
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <Layers className="w-5 h-5 mr-3" />
-            Domains
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <Users className="w-5 h-5 mr-3" />
-            Team
-          </Button>
+          <Link href="/">
+            <Button variant="ghost" className={`w-full justify-start ${location === '/' ? 'bg-accent text-accent-foreground' : ''}`}>
+              <Home className="w-5 h-5 mr-3" />
+              Dashboard
+            </Button>
+          </Link>
+          <Link href="/domains">
+            <Button variant="ghost" className={`w-full justify-start ${location === '/domains' ? 'bg-accent text-accent-foreground' : ''}`}>
+              <Layers className="w-5 h-5 mr-3" />
+              Domains
+            </Button>
+          </Link>
+          <Link href="/reports">
+            <Button variant="ghost" className={`w-full justify-start ${location === '/reports' ? 'bg-accent text-accent-foreground' : ''}`}>
+              <BarChart3 className="w-5 h-5 mr-3" />
+              Reports
+            </Button>
+          </Link>
         </nav>
 
         {/* Team Members Section */}
@@ -72,20 +77,28 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
         )}
 
-        <Card className="p-3 absolute bottom-6 left-6 right-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">{initials}</span>
+        <div className="absolute bottom-6 left-6 right-6">
+          <Card className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-semibold">{initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={logout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </Card>
+          </Card>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={logout}
+            className="w-full mt-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="w-3 h-3 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </div>
     </aside>
   );

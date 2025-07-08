@@ -105,6 +105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User already exists" });
+      }
+      
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       
       const user = await storage.createUser({

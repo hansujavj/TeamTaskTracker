@@ -5,16 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { login, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('member');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   // Redirect if already logged in
   if (user) {
@@ -28,10 +33,29 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      setLocation('/');
+      if (isSignUp) {
+        if (!name.trim()) {
+          setError('Name is required');
+          return;
+        }
+        
+        const response = await apiRequest('POST', '/api/auth/register', {
+          name,
+          email,
+          password,
+          role,
+          preferredDomain: null
+        });
+        
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        setLocation('/');
+      } else {
+        await login(email, password);
+        setLocation('/');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : (isSignUp ? 'Registration failed' : 'Login failed'));
     } finally {
       setIsLoading(false);
     }
@@ -46,10 +70,25 @@ export default function Login() {
               <CheckCircle2 className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold">TaskFlow</CardTitle>
-            <CardDescription>Sign in to your team task manager</CardDescription>
+            <CardDescription>
+              {isSignUp ? 'Create your team task manager account' : 'Sign in to your team task manager'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -72,6 +111,20 @@ export default function Login() {
                   required
                 />
               </div>
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={role} onValueChange={setRole}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Team Member</SelectItem>
+                      <SelectItem value="lead">Team Lead</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -79,9 +132,33 @@ export default function Login() {
                 </Alert>
               )}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading 
+                  ? (isSignUp ? 'Creating Account...' : 'Signing in...') 
+                  : (isSignUp ? 'Create Account' : 'Sign In')
+                }
               </Button>
             </form>
+            
+            <div className="text-center mt-4">
+              <Button 
+                type="button" 
+                variant="link" 
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setName('');
+                  setEmail('');
+                  setPassword('');
+                  setRole('member');
+                }}
+                className="text-sm"
+              >
+                {isSignUp 
+                  ? 'Already have an account? Sign in' 
+                  : "Don't have an account? Sign up"
+                }
+              </Button>
+            </div>
             
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
               <h3 className="font-medium text-slate-900 mb-2">Demo Accounts</h3>
